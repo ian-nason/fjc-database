@@ -1,0 +1,22 @@
+repo: Nason/fjc-database
+file: fjc.duckdb
+pretty_name: FJC Integrated Database (federal civil, criminal, appellate cases)
+title: FJC Integrated Database (IDB)
+license: other
+tags: [courts, federal-courts, litigation, criminal-justice, fjc, duckdb, datapond]
+size_category: 10M<n<100M
+alias: fjc
+table_columns: [description, row_count, column_count]
+intro: |
+  Every civil case (SY1988-present), criminal defendant (FY1970-present) and appeal
+  (1971-present) reported by the federal courts to the Administrative Office of the
+  U.S. Courts, as published in the Federal Judicial Center's Integrated Database
+  (updated quarterly). Column names are the IDB's; -8/-9 and 01/01/1900 sentinels
+  are stored as NULL.
+quick_start_sql: |
+  SELECT EXTRACT(YEAR FROM FILEDATE) AS year, COUNT(*) AS civil_cases
+  FROM fjc.civil WHERE FILEDATE >= '2015-01-01'
+  GROUP BY 1 ORDER BY 1;
+footer: |
+  Build pipeline, codebooks and caveats: https://github.com/ian-nason/fjc-database
+  Source: https://www.fjc.gov/research/idb (public domain).
