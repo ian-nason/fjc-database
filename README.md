@@ -55,13 +55,20 @@ Typing: `MM/DD/YYYY` fields are `DATE`; the IDB's `-8`/`-9` "not applicable" cod
 docket numbers, statute titles/sections and nature-of-suit codes stay text.
 
 Views: `v_civil_by_year` (cases by filing year and nature of suit), `v_criminal_by_year`
-(defendants by fiscal year and lead filing offense), `v_appeals_by_year`.
+(defendants by harmonised `fiscal_year`, source file and lead filing offense, with the
+1996+ `FOFFCD1` and 1970-95 `FOFFCODE` codes kept in separate columns because the two
+codebooks number offenses differently), `v_appeals_by_year`.
 
 ## Researcher caveats
 
-- **Civil rows are case snapshots, not events.** A case appears once, with its latest
-  status; `TAPEYEAR` is the statistical year of the snapshot. Pending cases have no
-  `TERMDATE`.
+- **Civil rows are case records, not unique cases.** Each row is the FJC's record of a
+  case as of the extract, with `TAPEYEAR` the statistical year it was last reported;
+  pending cases have no `TERMDATE`. A reopened, reinstated, remanded or transferred case
+  gets a new record with an `ORIGIN` code of 4-7 (see the codebook), so the docket key
+  `(CIRCUIT, DISTRICT, OFFICE, DOCKET)` is not unique: 10,959,535 rows carry 10,506,944
+  distinct docket keys, and 957,929 rows have a reopening-type `ORIGIN`. To count original
+  filings use `ORIGIN = 1` (or `ORIGIN IN (1, 2, 3)` for original, removed and remanded
+  filings); to follow one case take all rows with its docket key ordered by `FILEDATE`.
 - **Criminal rows are defendants, not cases**; join `DOCKET` + `CIRCUIT` + `DISTRICT` +
   `OFFICE` to group a case.
 - **Invalid calendar dates in the source** (e.g. February 30) are `NULL`; the build asserts

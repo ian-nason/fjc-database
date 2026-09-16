@@ -181,8 +181,12 @@ VIEWS = {
         FROM civil WHERE FILEDATE IS NOT NULL GROUP BY 1, 2""",
     "v_criminal_by_year": """
         CREATE OR REPLACE VIEW v_criminal_by_year AS
-        SELECT FISCALYR AS fiscal_year, FOFFCD1 AS lead_offense_code, COUNT(*) AS defendants
-        FROM criminal GROUP BY 1, 2""",
+        -- fiscal_year is the harmonised year (FISCALYR 1996+, TAPEYEAR 1970-95). The lead
+        -- filing offense keeps its era-specific code: FOFFCD1 (1996+ codebook) and FOFFCODE
+        -- (1970-95 codebook) are different coding schemes and are not merged.
+        SELECT fiscal_year, source_file, FOFFCD1 AS lead_offense_code_1996on, FOFFCODE AS lead_offense_code_1970to95,
+               COUNT(*) AS defendants
+        FROM criminal GROUP BY 1, 2, 3, 4""",
     "v_appeals_by_year": """
         CREATE OR REPLACE VIEW v_appeals_by_year AS
         SELECT EXTRACT(YEAR FROM DKTDATE) AS docketed_year, CIRCUIT AS circuit, COUNT(*) AS appeals
@@ -205,6 +209,12 @@ def run_validation(con, db_path: Path) -> int:
     ck.query(con, "civil NOS present (> 99%)", "SELECT COUNT(NOS) * 1.0 / COUNT(*) FROM civil", lambda v: v > 0.99, lambda v: f"{v:.3%}")
     for v in VIEWS:
         ck.query(con, f"{v} runs", f"SELECT COUNT(*) FROM {v}", lambda n: n > 0, str)
+    ck.query(con, "v_criminal_by_year covers every fiscal year in criminal",
+             "SELECT COUNT(*) FROM (SELECT DISTINCT fiscal_year FROM criminal EXCEPT SELECT DISTINCT fiscal_year FROM v_criminal_by_year)",
+             lambda n: n == 0, str)
+    ck.query(con, "v_criminal_by_year totals reconcile with criminal",
+             "SELECT (SELECT SUM(defendants) FROM v_criminal_by_year) = (SELECT COUNT(*) FROM criminal)", lambda v: v, str)
+    ck.query(con, "v_criminal_by_year has no NULL-year bucket", "SELECT COUNT(*) FROM v_criminal_by_year WHERE fiscal_year IS NULL", lambda n: n == 0, str)
     for (t, c), (bad, nn) in UNPARSEABLE_DATES.items():
         if bad:
             ck.check(f"{t}.{c}: invalid calendar dates nulled < 0.1%", bad / nn < 0.001, f"{bad} of {nn:,}")
