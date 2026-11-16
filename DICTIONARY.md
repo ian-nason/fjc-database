@@ -5,7 +5,7 @@ see the FJC codebooks in docs/ for code values. -8/-9 and 01/01/1900 sentinels a
 
 ## civil
 
-Civil cases filed in U.S. district courts, statistical year 1988 to present: one row per case (parties, nature of suit, jurisdiction, filing/termination dates, disposition, judgment)
+Civil source case records reported by U.S. district courts, statistical year 1988 onward: parties, nature of suit, jurisdiction, filing/termination dates, disposition and judgment. Reopened or transferred matters can produce repeated docket keys; a row is a source record, not a guaranteed unique case.
 
 Rows: 10,959,535
 
